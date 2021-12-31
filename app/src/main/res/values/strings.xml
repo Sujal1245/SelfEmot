@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SelfEmot</string>
+    <string name="image_to_be_processed">Image to be Processed</string>
+    <string name="click_a_pic_to_continue">Click a Pic to Continue!</string>
+    <string name="image">Image</string>
+    <string name="go">GO!</string>
+</resources>
