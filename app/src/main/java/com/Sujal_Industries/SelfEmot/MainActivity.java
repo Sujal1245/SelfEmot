@@ -2,6 +2,7 @@ package com.Sujal_Industries.SelfEmot;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,12 +10,12 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -24,8 +25,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -38,7 +40,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -52,12 +53,15 @@ import com.google.mlkit.vision.label.defaults.ImageLabelerOptions;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int MY_PERMISSIONS_REQUEST = 7899;
-    private static final int REQUEST_TAKE_PHOTO = 420;
     private static final String savedFile = "SETTINGS";
     private final String[] PERMISSIONS = {
             Manifest.permission.CAMERA,
@@ -77,7 +81,6 @@ public class MainActivity extends AppCompatActivity {
     LinearLayout info;
     Toolbar toolbar;
     CollapsingToolbarLayout collapsingToolbarLayout;
-    ActionBar actionBar;
     FloatingActionButton fab;
     FloatingActionButton settings;
     ImageButton darkTog;
@@ -85,6 +88,24 @@ public class MainActivity extends AppCompatActivity {
     AppBarLayout appBarLayout;
     boolean on;
 
+    private ProgressBar progressBar;
+    private Bitmap rotatedBitmap;
+
+    ActivityResultLauncher<Intent> mGetContent = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+        if (result.getResultCode() == RESULT_OK) {
+            file = new File(mCurrentPhotoPath);
+            Bitmap bitmap;
+            try {
+                bitmap = MediaStore.Images.Media
+                        .getBitmap(getContentResolver(), Uri.fromFile(file));
+                startAsyncTask(bitmap);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    });
+
+    @SuppressLint("SwitchIntDef")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         //Preparing theme as per the settings..
@@ -110,14 +131,8 @@ public class MainActivity extends AppCompatActivity {
         info = findViewById(R.id.info);
         appBarLayout = findViewById(R.id.appBarLayout);
 
-        //Setting up layout design..
         setSupportActionBar(toolbar);
-        actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayShowTitleEnabled(true);
-            actionBar.setTitle("SelfEmot");
-            actionBar.setDisplayHomeAsUpEnabled(false);
-        }
+        collapsingToolbarLayout.setTitle("SelfEmot");
 
         //Asking for permissions if not done..
         if (!hasPermissions(this, PERMISSIONS)) {
@@ -193,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
     private void openCamera() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         // Ensure that there's a camera activity to handle the intent
-        if (intent.resolveActivity(getPackageManager()) != null) {
+        try {
             // Create the File where the photo should go
             File photoFile = null;
             try {
@@ -205,27 +220,10 @@ public class MainActivity extends AppCompatActivity {
             if (photoFile != null) {
                 Uri photoURI = FileProvider.getUriForFile(this, "com.Sujal_Industries.SelfEmot", photoFile);
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-                startActivityForResult(intent, REQUEST_TAKE_PHOTO);
+                mGetContent.launch(intent);
             }
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK) {
-            if (requestCode == REQUEST_TAKE_PHOTO) {
-                file = new File(mCurrentPhotoPath);
-                Bitmap bitmap;
-                try {
-                    bitmap = MediaStore.Images.Media
-                            .getBitmap(getContentResolver(), Uri.fromFile(file));
-                    RotateImage rotateImage = new RotateImage();
-                    rotateImage.execute(bitmap);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+        } catch (ActivityNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
@@ -240,131 +238,6 @@ public class MainActivity extends AppCompatActivity {
         return image;
     }
 
-    //Class for doing background tasking.
-    private class RotateImage extends AsyncTask<Bitmap, Void, Bitmap> {
-        private ProgressBar progressBar;
-        private Bitmap rotatedBitmap;
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            progressBar = findViewById(R.id.progress);
-            progressBar.setVisibility(View.VISIBLE);
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-        }
-
-        @Override
-        protected Bitmap doInBackground(Bitmap... imgs) {
-            Bitmap bitmap = imgs[0];
-
-            if (bitmap != null) {
-                //Rotating the image captured...
-                ExifInterface ei = null;
-                try {
-                    ei = new ExifInterface(mCurrentPhotoPath);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                if (file.exists()) {
-                    if (file.delete()) {
-                        Log.i("Process", "DONE!");
-                    }
-                }
-
-                int orientation = 0;
-                if (ei != null) {
-                    orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-                            ExifInterface.ORIENTATION_UNDEFINED);
-                }
-
-                float angle = 0.0f;
-
-                //Saving angle as per the condition.
-                try {
-                    switch (orientation) {
-
-                        case ExifInterface.ORIENTATION_ROTATE_90:
-                            angle = 90.0f;
-                            break;
-
-                        case ExifInterface.ORIENTATION_ROTATE_180:
-                            angle = 180.0f;
-                            break;
-
-                        case ExifInterface.ORIENTATION_ROTATE_270:
-                            angle = 270.0f;
-                            break;
-
-                        case ExifInterface.ORIENTATION_NORMAL:
-                        default:
-                            rotatedBitmap = bitmap;
-                    }
-                } catch (Exception e) {
-                    Log.e("Error", "Error OCCURRED!");
-                }
-                //Rotating Image...
-                Matrix matrix = new Matrix();
-                matrix.postRotate(angle);
-                rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-                return rotatedBitmap;
-            } else {
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
-            assert rotatedBitmap != null;
-            //DisplayingImage
-            Glide.with(MainActivity.this)
-                    .load(rotatedBitmap)
-                    .into(capturedImage);
-            //Processing Image...
-            InputImage image = InputImage.fromBitmap(rotatedBitmap, 0);
-            ImageLabeler detector = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS);
-            @SuppressLint("NotifyDataSetChanged") Task<List<ImageLabel>> result =
-                    detector.process(image)
-                            .addOnSuccessListener(
-                                    labels -> {
-                                        // Task completed successfully
-                                        // Updating RecyclerView...
-                                        resultArrayList = new ArrayList<>();
-                                        resultAdapter = new ResultAdapter(resultArrayList);
-                                        layoutManager = new LinearLayoutManager(getApplicationContext());
-
-                                        info.setVisibility(View.GONE);
-
-                                        recyclerView.setVisibility(View.VISIBLE);
-                                        recyclerView.setHasFixedSize(false);
-                                        recyclerView.setLayoutManager(layoutManager);
-                                        recyclerView.setAdapter(resultAdapter);
-
-                                        for (ImageLabel label : labels) {
-                                            String text = label.getText();
-                                            float confidence = label.getConfidence() * 100;
-                                            String con = ((double) Math.round(confidence * 100d) / 100d) + "%";
-                                            resultArrayList.add(new Result(text, con));
-                                        }
-
-                                        resultAdapter.notifyDataSetChanged();
-
-                                        Snackbar snak = Snackbar.make(coordinatorLayout, "Success!", Snackbar.LENGTH_SHORT);
-                                        snak.show();
-                                    })
-                            .addOnFailureListener(
-                                    e -> {
-                                        // Task failed with an exception
-                                        // Giving Warning!
-                                        Snackbar snak = Snackbar.make(coordinatorLayout, "Failure!", Snackbar.LENGTH_SHORT);
-                                        snak.show();
-                                    });
-            progressBar.setVisibility(View.INVISIBLE);
-            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-        }
-    }
-
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -375,5 +248,151 @@ public class MainActivity extends AppCompatActivity {
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         mCurrentPhotoPath = savedInstanceState.getString("CurrentPath");
+    }
+
+    private void startAsyncTask(Bitmap bitmap) {
+        Observable.just(bitmap)
+                .map(this::doInBackground)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe(this::onPreExecute)
+                .subscribe(this::onPostExecute);
+    }
+
+    private void onPreExecute(Disposable disposable) {
+        progressBar = findViewById(R.id.progress);
+        progressBar.setVisibility(View.VISIBLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+    }
+    
+
+    private Bitmap doInBackground(Bitmap... imgs) {
+        Bitmap bitmap = imgs[0];
+
+        if (bitmap != null) {
+            //Rotating the image captured...
+            ExifInterface ei = null;
+            try {
+                ei = new ExifInterface(mCurrentPhotoPath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (file.exists()) {
+                if (file.delete()) {
+                    Log.i("Process", "DONE!");
+                }
+            }
+
+            int orientation = 0;
+            if (ei != null) {
+                orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                        ExifInterface.ORIENTATION_UNDEFINED);
+            }
+
+            float angle = 0.0f;
+
+            //Saving angle as per the condition.
+            try {
+                switch (orientation) {
+
+                    case ExifInterface.ORIENTATION_ROTATE_90:
+                        angle = 90.0f;
+                        break;
+
+                    case ExifInterface.ORIENTATION_ROTATE_180:
+                        angle = 180.0f;
+                        break;
+
+                    case ExifInterface.ORIENTATION_ROTATE_270:
+                        angle = 270.0f;
+                        break;
+
+                    case ExifInterface.ORIENTATION_NORMAL:
+                    default:
+                        rotatedBitmap = bitmap;
+                }
+            } catch (Exception e) {
+                Log.e("Error", "Error OCCURRED!");
+            }
+            //Rotating Image...
+            Matrix matrix = new Matrix();
+            matrix.postRotate(angle);
+            rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            return rotatedBitmap;
+        } else {
+            return null;
+        }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private void onPostExecute(Bitmap bitmap) {
+        assert rotatedBitmap != null;
+        //DisplayingImage
+        Glide.with(getApplicationContext())
+                .load(rotatedBitmap)
+                .into(capturedImage);
+        //Processing Image...
+        InputImage image = InputImage.fromBitmap(rotatedBitmap, 0);
+        ImageLabeler detector = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS);
+        detector.process(image)
+                .addOnSuccessListener(
+                        labels -> {
+                            // Task completed successfully
+                            // Updating RecyclerView...
+                            resultArrayList = new ArrayList<>();
+                            resultAdapter = new ResultAdapter(resultArrayList);
+                            layoutManager = new LinearLayoutManager(getApplicationContext());
+
+                            info.setVisibility(View.GONE);
+
+                            recyclerView.setVisibility(View.VISIBLE);
+                            recyclerView.setHasFixedSize(false);
+                            recyclerView.setLayoutManager(layoutManager);
+                            recyclerView.setAdapter(resultAdapter);
+
+                            for (ImageLabel label : labels) {
+                                String text = label.getText();
+                                float confidence = label.getConfidence() * 100;
+                                String con = ((double) Math.round(confidence * 100d) / 100d) + "%";
+                                resultArrayList.add(new Result(text, con));
+                            }
+
+                            resultAdapter.notifyDataSetChanged();
+                            animateRecyclerView();
+
+                            Snackbar snak = Snackbar.make(coordinatorLayout, "Success!", Snackbar.LENGTH_SHORT);
+                            snak.show();
+                        })
+                .addOnFailureListener(
+                        e -> {
+                            // Task failed with an exception
+                            // Giving Warning!
+                            Snackbar snak = Snackbar.make(coordinatorLayout, "Failure!", Snackbar.LENGTH_SHORT);
+                            snak.show();
+                        });
+        progressBar.setVisibility(View.INVISIBLE);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+    }
+
+    public void animateRecyclerView() {
+        recyclerView.getViewTreeObserver().addOnPreDrawListener(
+                new ViewTreeObserver.OnPreDrawListener() {
+                    @Override
+                    public boolean onPreDraw() {
+                        recyclerView.getViewTreeObserver().removeOnPreDrawListener(this);
+
+                        for (int i = 0; i < recyclerView.getChildCount(); i++) {
+                            View v = recyclerView.getChildAt(i);
+                            v.setAlpha(0.0f);
+                            v.animate().alpha(1.0f)
+                                    .setDuration(300)
+                                    .setStartDelay(i * 100L)
+                                    .start();
+                        }
+
+                        return true;
+                    }
+                });
     }
 }

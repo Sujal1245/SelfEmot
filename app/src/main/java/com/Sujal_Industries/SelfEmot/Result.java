@@ -4,18 +4,16 @@ public class Result {
     private String name;
     private String confidence;
 
-    public Result(String name,String confidence)
-    {
-        this.name=name;
-        this.confidence=confidence;
+    public Result(String name, String confidence) {
+        this.name = name;
+        this.confidence = confidence;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name)
-    {
+    public void setName(String name) {
         this.name = name;
     }
 

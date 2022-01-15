@@ -16,12 +16,12 @@
             android:layout_height="match_parent"
             app:contentScrim="@color/colorPrimary"
             app:layout_scrollFlags="scroll|exitUntilCollapsed"
-            app:titleEnabled="false">
+            app:title="@string/app_name">
 
             <ImageView
                 android:id="@+id/captured"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="400dp"
                 android:contentDescription="@string/image_to_be_processed"
                 android:scaleType="centerCrop"
                 android:src="@drawable/splash"
@@ -31,18 +31,16 @@
                 android:id="@+id/collapsing_toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                app:layout_collapseMode="pin"
-                app:title="@string/app_name">
+                app:layout_collapseMode="pin">
 
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
                     android:id="@+id/setting_fab"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="end"
-                    android:src="@drawable/settings"
+                    android:src="@drawable/ic_baseline_settings_24"
                     app:fabSize="mini"
                     android:layout_marginTop="10dp"
-                    android:layout_marginRight="10dp"
                     android:layout_marginEnd="10dp" />
                 <include layout="@layout/fab_layout" />
             </androidx.appcompat.widget.Toolbar>
