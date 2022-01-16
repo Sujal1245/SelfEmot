@@ -3,7 +3,8 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
-        <entry key="..\:/Users/wwwsu/AndroidStudioProjects/SelfEmot/app/src/main/res/layout/activity_main.xml" value="0.17552083333333332" />
+        <entry key="..\:/Users/wwwsu/AndroidStudioProjects/SelfEmot/app/src/main/res/drawable/ic_baseline_camera_alt_24.xml" value="0.1" />
+        <entry key="..\:/Users/wwwsu/AndroidStudioProjects/SelfEmot/app/src/main/res/layout/activity_main.xml" value="0.6" />
       </map>
     </option>
   </component>

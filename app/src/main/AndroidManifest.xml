@@ -19,6 +19,7 @@
         tools:ignore="GoogleAppIndexingWarning">
 
         <activity android:name=".MainActivity"
+            android:theme="@style/Theme.App.Starting"
             android:screenOrientation="portrait"
             android:exported="true"
             tools:ignore="LockedOrientationActivity">

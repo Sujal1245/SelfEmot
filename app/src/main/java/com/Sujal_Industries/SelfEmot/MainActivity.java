@@ -21,20 +21,18 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.widget.Toolbar;
+import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.splashscreen.SplashScreen;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -42,7 +40,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.imageview.ShapeableImageView;
+import com.google.android.material.shape.CornerFamily;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.label.ImageLabel;
@@ -68,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.READ_EXTERNAL_STORAGE
     };
-    private ImageView capturedImage;
+    private ShapeableImageView capturedImage;
     private String mCurrentPhotoPath;
     private RecyclerView recyclerView;
     private RecyclerView.LayoutManager layoutManager;
@@ -78,14 +79,11 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sp;
     private SharedPreferences.Editor editor;
 
-    LinearLayout info;
-    Toolbar toolbar;
-    CollapsingToolbarLayout collapsingToolbarLayout;
+    LinearLayoutCompat info;
     FloatingActionButton fab;
     FloatingActionButton settings;
     ImageButton darkTog;
     CoordinatorLayout coordinatorLayout;
-    AppBarLayout appBarLayout;
     boolean on;
 
     private ProgressBar progressBar;
@@ -117,11 +115,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         super.onCreate(savedInstanceState);
+
+        SplashScreen.installSplashScreen(this);
+
         setContentView(R.layout.activity_main);
 
         //Getting elements ready..
-        toolbar = findViewById(R.id.collapsing_toolbar);
-        collapsingToolbarLayout = findViewById(R.id.collapsing_toolbar_layout);
         capturedImage = findViewById(R.id.captured);
         recyclerView = findViewById(R.id.recyclerView);
         fab = findViewById(R.id.floating_action_button);
@@ -129,10 +128,13 @@ public class MainActivity extends AppCompatActivity {
         darkTog = findViewById(R.id.darkToggle);
         coordinatorLayout = findViewById(R.id.coordinatorLayout);
         info = findViewById(R.id.info);
-        appBarLayout = findViewById(R.id.appBarLayout);
 
-        setSupportActionBar(toolbar);
-        collapsingToolbarLayout.setTitle("SelfEmot");
+        float radius=50.0f;
+        capturedImage.setShapeAppearanceModel(capturedImage.getShapeAppearanceModel()
+                .toBuilder()
+                .setBottomLeftCorner(CornerFamily.ROUNDED, radius)
+                .setBottomRightCorner(CornerFamily.ROUNDED, radius)
+                .build());
 
         //Asking for permissions if not done..
         if (!hasPermissions(this, PERMISSIONS)) {
