@@ -174,15 +174,13 @@ public class MainActivity extends AppCompatActivity {
             editor = sp.edit();
 
             switch (AppCompatDelegate.getDefaultNightMode()) {
-                case AppCompatDelegate.MODE_NIGHT_YES: {
+                case AppCompatDelegate.MODE_NIGHT_YES -> {
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
                     editor.putBoolean("Night", false);
-                    break;
                 }
-                case AppCompatDelegate.MODE_NIGHT_NO: {
+                case AppCompatDelegate.MODE_NIGHT_NO -> {
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
                     editor.putBoolean("Night", true);
-                    break;
                 }
             }
             editor.apply();
@@ -294,22 +292,10 @@ public class MainActivity extends AppCompatActivity {
             //Saving angle as per the condition.
             try {
                 switch (orientation) {
-
-                    case ExifInterface.ORIENTATION_ROTATE_90:
-                        angle = 90.0f;
-                        break;
-
-                    case ExifInterface.ORIENTATION_ROTATE_180:
-                        angle = 180.0f;
-                        break;
-
-                    case ExifInterface.ORIENTATION_ROTATE_270:
-                        angle = 270.0f;
-                        break;
-
-                    case ExifInterface.ORIENTATION_NORMAL:
-                    default:
-                        rotatedBitmap = bitmap;
+                    case ExifInterface.ORIENTATION_ROTATE_90 -> angle = 90.0f;
+                    case ExifInterface.ORIENTATION_ROTATE_180 -> angle = 180.0f;
+                    case ExifInterface.ORIENTATION_ROTATE_270 -> angle = 270.0f;
+                    default -> rotatedBitmap = bitmap;
                 }
             } catch (Exception e) {
                 Log.e("Error", "Error OCCURRED!");
