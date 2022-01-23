@@ -4,4 +4,5 @@
     <string name="click_a_pic_to_continue">Click a Pic to Continue!</string>
     <string name="image">Image</string>
     <string name="go">GO!</string>
+    <string name="setting_fab">Setting Fab</string>
 </resources>

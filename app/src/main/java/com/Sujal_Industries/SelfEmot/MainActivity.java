@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.net.Uri;
@@ -38,8 +39,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.imageview.ShapeableImageView;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.shape.CornerFamily;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.mlkit.vision.common.InputImage;
@@ -69,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
     private ShapeableImageView capturedImage;
     private String mCurrentPhotoPath;
     private RecyclerView recyclerView;
-    private RecyclerView.LayoutManager layoutManager;
     private ResultAdapter resultAdapter;
     private ArrayList<Result> resultArrayList;
     private File file;
@@ -78,12 +80,10 @@ public class MainActivity extends AppCompatActivity {
 
     LinearLayoutCompat info;
     FloatingActionButton fab;
-    FloatingActionButton settings;
-    ImageButton darkTog;
+    FloatingActionButton darkTog;
     CoordinatorLayout coordinatorLayout;
-    boolean on;
 
-    private ProgressBar progressBar;
+    private LinearProgressIndicator progressBar;
     private Bitmap rotatedBitmap;
 
     ActivityResultLauncher<Intent> mGetContent = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -121,17 +121,23 @@ public class MainActivity extends AppCompatActivity {
         capturedImage = findViewById(R.id.captured);
         recyclerView = findViewById(R.id.recyclerView);
         fab = findViewById(R.id.floating_action_button);
-        settings = findViewById(R.id.setting_fab);
         darkTog = findViewById(R.id.darkToggle);
         coordinatorLayout = findViewById(R.id.coordinatorLayout);
         info = findViewById(R.id.info);
 
-        float radius=50.0f;
+        float radius = 50.0f;
         capturedImage.setShapeAppearanceModel(capturedImage.getShapeAppearanceModel()
                 .toBuilder()
                 .setBottomLeftCorner(CornerFamily.ROUNDED, radius)
                 .setBottomRightCorner(CornerFamily.ROUNDED, radius)
                 .build());
+
+        resultArrayList = new ArrayList<>();
+        resultAdapter = new ResultAdapter(resultArrayList);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+        recyclerView.setHasFixedSize(false);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setAdapter(resultAdapter);
 
         //Asking for permissions if not done..
         if (!hasPermissions(this, PERMISSIONS)) {
@@ -143,30 +149,6 @@ public class MainActivity extends AppCompatActivity {
                 openCamera();
             } else {
                 ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS, MY_PERMISSIONS_REQUEST);
-            }
-        });
-
-        //Animations
-        final Animation show_fab_1 = AnimationUtils.loadAnimation(getApplication(), R.anim.fab1_show);
-        final Animation hide_fab_1 = AnimationUtils.loadAnimation(getApplication(), R.anim.fab1_hide);
-
-        on = false;
-        settings.setOnClickListener(view -> {
-            FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) darkTog.getLayoutParams();
-            if (!on) {
-                layoutParams.rightMargin += (int) (darkTog.getWidth() * 0.75);
-                layoutParams.topMargin += (int) (darkTog.getHeight() * 0.25);
-                darkTog.setLayoutParams(layoutParams);
-                darkTog.startAnimation(show_fab_1);
-                darkTog.setClickable(true);
-                on = true;
-            } else {
-                layoutParams.rightMargin -= (int) (darkTog.getWidth() * 0.75);
-                layoutParams.topMargin -= (int) (darkTog.getHeight() * 0.25);
-                darkTog.setLayoutParams(layoutParams);
-                darkTog.startAnimation(hide_fab_1);
-                darkTog.setClickable(false);
-                on = false;
             }
         });
 
@@ -185,10 +167,6 @@ public class MainActivity extends AppCompatActivity {
             }
             editor.apply();
         });
-
-        if (savedInstanceState != null) {
-            mCurrentPhotoPath = savedInstanceState.getString("CurrentPath");
-        }
     }
 
     public static boolean hasPermissions(Context context, String... permissions) {
@@ -235,18 +213,7 @@ public class MainActivity extends AppCompatActivity {
         return image;
     }
 
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putString("CurrentPath", mCurrentPhotoPath);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        mCurrentPhotoPath = savedInstanceState.getString("CurrentPath");
-    }
-
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private void startAsyncTask(Bitmap bitmap) {
         Observable.just(bitmap)
                 .map(this::doInBackground)
@@ -258,10 +225,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void onPreExecute(Disposable disposable) {
         progressBar = findViewById(R.id.progress);
-        progressBar.setVisibility(View.VISIBLE);
+        progressBar.show();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
     }
-    
+
 
     private Bitmap doInBackground(Bitmap... imgs) {
         Bitmap bitmap = imgs[0];
@@ -283,8 +250,7 @@ public class MainActivity extends AppCompatActivity {
 
             int orientation = 0;
             if (ei != null) {
-                orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-                        ExifInterface.ORIENTATION_UNDEFINED);
+                orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
             }
 
             float angle = 0.0f;
@@ -314,8 +280,9 @@ public class MainActivity extends AppCompatActivity {
     private void onPostExecute(Bitmap bitmap) {
         assert rotatedBitmap != null;
         //DisplayingImage
-        Glide.with(getApplicationContext())
+        Glide.with(MainActivity.this)
                 .load(rotatedBitmap)
+                .transition(DrawableTransitionOptions.withCrossFade())
                 .into(capturedImage);
         //Processing Image...
         InputImage image = InputImage.fromBitmap(rotatedBitmap, 0);
@@ -325,16 +292,10 @@ public class MainActivity extends AppCompatActivity {
                         labels -> {
                             // Task completed successfully
                             // Updating RecyclerView...
-                            resultArrayList = new ArrayList<>();
-                            resultAdapter = new ResultAdapter(resultArrayList);
-                            layoutManager = new LinearLayoutManager(getApplicationContext());
-
                             info.setVisibility(View.GONE);
-
                             recyclerView.setVisibility(View.VISIBLE);
-                            recyclerView.setHasFixedSize(false);
-                            recyclerView.setLayoutManager(layoutManager);
-                            recyclerView.setAdapter(resultAdapter);
+
+                            resultArrayList.clear();
 
                             for (ImageLabel label : labels) {
                                 String text = label.getText();
@@ -346,18 +307,19 @@ public class MainActivity extends AppCompatActivity {
                             resultAdapter.notifyDataSetChanged();
                             animateRecyclerView();
 
-                            Snackbar snak = Snackbar.make(coordinatorLayout, "Success!", Snackbar.LENGTH_SHORT);
-                            snak.show();
+                            Snackbar.make(coordinatorLayout, "Success!", Snackbar.LENGTH_SHORT).show();
+
+                            progressBar.hide();
+                            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         })
                 .addOnFailureListener(
                         e -> {
                             // Task failed with an exception
                             // Giving Warning!
-                            Snackbar snak = Snackbar.make(coordinatorLayout, "Failure!", Snackbar.LENGTH_SHORT);
-                            snak.show();
+                            Snackbar.make(coordinatorLayout, "Failure!", Snackbar.LENGTH_SHORT).show();
+                            progressBar.hide();
+                            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                         });
-        progressBar.setVisibility(View.INVISIBLE);
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
     }
 
     public void animateRecyclerView() {
@@ -379,5 +341,11 @@ public class MainActivity extends AppCompatActivity {
                         return true;
                     }
                 });
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
     }
 }

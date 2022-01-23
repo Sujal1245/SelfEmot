@@ -4,7 +4,8 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/wwwsu/AndroidStudioProjects/SelfEmot/app/src/main/res/drawable/ic_baseline_camera_alt_24.xml" value="0.1" />
-        <entry key="..\:/Users/wwwsu/AndroidStudioProjects/SelfEmot/app/src/main/res/layout/activity_main.xml" value="0.6" />
+        <entry key="..\:/Users/wwwsu/AndroidStudioProjects/SelfEmot/app/src/main/res/drawable/ic_baseline_settings_24.xml" value="0.1" />
+        <entry key="..\:/Users/wwwsu/AndroidStudioProjects/SelfEmot/app/src/main/res/layout/activity_main.xml" value="0.22" />
       </map>
     </option>
   </component>

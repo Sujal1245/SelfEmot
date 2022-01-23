@@ -1,58 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/coordinatorLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
     <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
         android:id="@+id/appBarLayout"
-        android:layout_height="400dp">
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:fitsSystemWindows="true">
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
             android:id="@+id/collapsing_toolbar_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:fitsSystemWindows="true"
+            app:collapsedTitleTextAppearance="@style/TextAppearance.Material3.ActionBar.Subtitle"
             app:contentScrim="@color/colorPrimary"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
-            app:title="@string/app_name"
-            app:expandedTitleTextColor="@android:color/black"
+            app:expandedTitleMarginBottom="50dp"
             app:expandedTitleTextAppearance="@style/TextAppearance.Material3.ActionBar.Title"
-            app:collapsedTitleTextAppearance="@style/TextAppearance.Material3.ActionBar.Subtitle">
+            app:expandedTitleTextColor="@android:color/black"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
+            app:title="@string/app_name">
 
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/captured"
                 android:layout_width="match_parent"
                 android:layout_height="400dp"
                 android:contentDescription="@string/image_to_be_processed"
+                android:fitsSystemWindows="true"
                 android:scaleType="centerCrop"
-                app:srcCompat="@drawable/splash"
-                app:layout_collapseMode="parallax" />
+                app:layout_collapseMode="parallax"
+                app:srcCompat="@drawable/splash" />
 
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/collapsing_toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
+                android:layout_marginBottom="29dp"
                 android:background="@android:color/transparent"
                 app:layout_collapseMode="pin">
+
+
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/setting_fab"
+                    android:id="@+id/darkToggle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="end"
                     android:layout_marginTop="10dp"
                     android:layout_marginEnd="10dp"
-                    android:src="@drawable/ic_baseline_settings_24"
-                    app:fabSize="mini"
-                    tools:ignore="ContentDescription" />
-
-                <include layout="@layout/fab_layout" />
-
+                    android:contentDescription="@string/setting_fab"
+                    android:src="@drawable/ic_baseline_nights_stay_24"
+                    app:fabSize="mini" />
 
             </com.google.android.material.appbar.MaterialToolbar>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/progress"
+                android:indeterminate="true"
+                android:layout_gravity="bottom|center"
+                android:layout_marginStart="15dp"
+                android:layout_marginEnd="15dp"
+                android:layout_marginBottom="30dp"
+                app:hideAnimationBehavior="outward"
+                app:indeterminateAnimationType="contiguous"
+                app:indicatorColor="@array/progress_colors"
+                app:showAnimationBehavior="inward"
+                android:visibility="invisible"/>
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
 
@@ -62,18 +80,18 @@
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:clipToPadding="false"
         android:paddingBottom="66dp"
-        android:clipToPadding="false"/>
+        android:visibility="gone"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
     <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/info"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center_horizontal"
         android:orientation="vertical"
         android:paddingTop="50dp"
-        android:id="@+id/info"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <com.google.android.material.textview.MaterialTextView
@@ -91,23 +109,14 @@
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
-    <ProgressBar
-        android:id="@+id/progress"
-        style="@style/Widget.AppCompat.ProgressBar"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_gravity="center"
-        android:indeterminateOnly="true"
-        android:visibility="invisible" />
-
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/floating_action_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="19dp"
+        android:contentDescription="@string/go"
         android:src="@drawable/googleg_standard_color_18"
-        app:backgroundTint="@color/colorPrimary"
-        android:contentDescription="@string/go" />
+        app:backgroundTint="@color/colorPrimary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
