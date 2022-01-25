@@ -18,11 +18,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.widget.FrameLayout;
-import android.widget.ImageButton;
-import android.widget.ProgressBar;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -77,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
     private File file;
     private SharedPreferences sp;
     private SharedPreferences.Editor editor;
+    private Disposable d;
 
     LinearLayoutCompat info;
     FloatingActionButton fab;
@@ -213,9 +209,8 @@ public class MainActivity extends AppCompatActivity {
         return image;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     private void startAsyncTask(Bitmap bitmap) {
-        Observable.just(bitmap)
+        d = Observable.just(bitmap)
                 .map(this::doInBackground)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -346,6 +341,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+    }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        d.dispose();
     }
 }
