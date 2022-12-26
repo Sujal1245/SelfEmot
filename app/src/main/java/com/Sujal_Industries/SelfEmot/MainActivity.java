@@ -11,6 +11,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -59,11 +60,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int MY_PERMISSIONS_REQUEST = 7899;
     private static final String savedFile = "SETTINGS";
-    private final String[] PERMISSIONS = {
-            Manifest.permission.CAMERA,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-    };
+    private String[] PERMISSIONS;
     private ShapeableImageView capturedImage;
     private String mCurrentPhotoPath;
     private RecyclerView recyclerView;
@@ -113,6 +110,20 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        if (Build.VERSION.SDK_INT < 33) {
+            if (Build.VERSION.SDK_INT > 28) {
+                PERMISSIONS = new String[]{Manifest.permission.CAMERA,
+                        Manifest.permission.READ_EXTERNAL_STORAGE};
+            } else {
+                PERMISSIONS = new String[]{Manifest.permission.CAMERA,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE};
+            }
+        } else {
+            PERMISSIONS = new String[]{Manifest.permission.CAMERA,
+                    Manifest.permission.READ_MEDIA_IMAGES};
+        }
+
         //Getting elements ready..
         capturedImage = findViewById(R.id.captured);
         recyclerView = findViewById(R.id.recyclerView);
@@ -144,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
             if (hasPermissions(MainActivity.this, PERMISSIONS)) {
                 openCamera();
             } else {
+                Log.i("EMERGENCY", "Asking for permission...");
                 ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS, MY_PERMISSIONS_REQUEST);
             }
         });
@@ -177,6 +189,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openCamera() {
+        Log.v("EMERGENCY", "Tried to open camera");
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         // Ensure that there's a camera activity to handle the intent
         try {
@@ -192,9 +205,13 @@ public class MainActivity extends AppCompatActivity {
                 Uri photoURI = FileProvider.getUriForFile(this, "com.Sujal_Industries.SelfEmot", photoFile);
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
                 mGetContent.launch(intent);
+                Log.v("EMERGENCY", "PASSED");
+            } else {
+                Log.v("EMERGENCY", "FAILURE");
             }
         } catch (ActivityNotFoundException e) {
             e.printStackTrace();
+            Log.v("EMERGENCY", "FAILED");
         }
     }
 
