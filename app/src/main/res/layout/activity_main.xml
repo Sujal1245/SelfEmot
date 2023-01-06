@@ -20,10 +20,10 @@
             app:collapsedTitleTextAppearance="@style/TextAppearance.Material3.ActionBar.Subtitle"
             app:contentScrim="@color/colorPrimary"
             app:expandedTitleMarginBottom="50dp"
-            app:expandedTitleTextAppearance="@style/TextAppearance.Material3.ActionBar.Title"
             app:expandedTitleTextColor="@android:color/black"
             app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
-            app:title="@string/app_name">
+            app:title="@string/app_name"
+            app:expandedTitleTextAppearance="@style/TextAppearance.Design.CollapsingToolbar.Expanded.Shadow">
 
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/captured"
@@ -39,7 +39,7 @@
                 android:id="@+id/collapsing_toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:layout_marginBottom="29dp"
+                android:layout_marginBottom="28dp"
                 android:background="@android:color/transparent"
                 app:layout_collapseMode="pin">
 
@@ -48,8 +48,8 @@
                     android:id="@+id/darkToggle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="10dp"
+                    app:fabCustomSize="40dp"
+                    android:layout_gravity="center|end"
                     android:layout_marginEnd="10dp"
                     android:contentDescription="@string/setting_fab"
                     android:src="@drawable/ic_baseline_nights_stay_24"
@@ -104,8 +104,16 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:id="@+id/appIcon"
             android:contentDescription="@string/image"
             android:src="@drawable/camera" />
+
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:text="@string/pick_an_image_from_gallery"
+            android:id="@+id/pickPhoto"/>
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 

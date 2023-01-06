@@ -19,8 +19,11 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ImageView;
 
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -71,18 +74,22 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences.Editor editor;
     private Disposable d;
 
+    ImageView appIcon;
     LinearLayoutCompat info;
     FloatingActionButton fab;
     FloatingActionButton darkTog;
+    Button pickImageButton;
     CoordinatorLayout coordinatorLayout;
 
     private LinearProgressIndicator progressBar;
     private Bitmap rotatedBitmap;
+    private Bitmap bitmap;
 
+    private boolean fromClick;
     ActivityResultLauncher<Intent> mGetContent = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
         if (result.getResultCode() == RESULT_OK) {
+            fromClick = true;
             file = new File(mCurrentPhotoPath);
-            Bitmap bitmap;
             try {
                 bitmap = MediaStore.Images.Media
                         .getBitmap(getContentResolver(), Uri.fromFile(file));
@@ -92,6 +99,26 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     });
+
+    // Registers a photo picker activity launcher in single-select mode.
+    ActivityResultLauncher<PickVisualMediaRequest> pickMedia =
+            registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+                // Callback is invoked after the user selects a media item or closes the
+                // photo picker.
+                if (uri != null) {
+                    Log.d("PhotoPicker", "Selected URI: " + uri);
+                    fromClick = false;
+                    try {
+                        bitmap = MediaStore.Images.Media
+                                .getBitmap(getContentResolver(), uri);
+                        startAsyncTask(bitmap);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Log.d("PhotoPicker", "No media selected");
+                }
+            });
 
     @SuppressLint("SwitchIntDef")
     @Override
@@ -127,8 +154,10 @@ public class MainActivity extends AppCompatActivity {
         //Getting elements ready..
         capturedImage = findViewById(R.id.captured);
         recyclerView = findViewById(R.id.recyclerView);
+        appIcon = findViewById(R.id.appIcon);
         fab = findViewById(R.id.floating_action_button);
         darkTog = findViewById(R.id.darkToggle);
+        pickImageButton = findViewById(R.id.pickPhoto);
         coordinatorLayout = findViewById(R.id.coordinatorLayout);
         info = findViewById(R.id.info);
 
@@ -151,14 +180,9 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS, MY_PERMISSIONS_REQUEST);
         }
 
-        fab.setOnClickListener(v -> {
-            if (hasPermissions(MainActivity.this, PERMISSIONS)) {
-                openCamera();
-            } else {
-                Log.i("EMERGENCY", "Asking for permission...");
-                ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS, MY_PERMISSIONS_REQUEST);
-            }
-        });
+        fab.setOnClickListener(v -> startProcess());
+        appIcon.setOnClickListener(v -> startProcess());
+        pickImageButton.setOnClickListener(v -> pickPhoto());
 
         darkTog.setOnClickListener(view -> {
             editor = sp.edit();
@@ -176,6 +200,21 @@ public class MainActivity extends AppCompatActivity {
             editor.apply();
         });
     }
+
+    private void pickPhoto() {
+        // Launch the photo picker and allow the user to choose only images.
+        pickMedia.launch(new PickVisualMediaRequest());
+    }
+
+    public void startProcess() {
+        if (hasPermissions(MainActivity.this, PERMISSIONS)) {
+            openCamera();
+        } else {
+            Log.i("EMERGENCY", "Asking for permission...");
+            ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS, MY_PERMISSIONS_REQUEST);
+        }
+    }
+
 
     public static boolean hasPermissions(Context context, String... permissions) {
         if (context != null && permissions != null) {
@@ -242,12 +281,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private Bitmap doInBackground(Bitmap... imgs) {
-        Bitmap bitmap = imgs[0];
-
+    private Bitmap doInBackground(Bitmap bitmap) {
         if (bitmap != null) {
+
+            if (!fromClick) {
+                rotatedBitmap = bitmap;
+                return rotatedBitmap;
+            }
+
             //Rotating the image captured...
             ExifInterface ei = null;
+
             try {
                 ei = new ExifInterface(mCurrentPhotoPath);
             } catch (IOException e) {

@@ -5,4 +5,5 @@
     <string name="image">Image</string>
     <string name="go">GO!</string>
     <string name="setting_fab">Setting Fab</string>
+    <string name="pick_an_image_from_gallery"> Or pick an image from Gallery</string>
 </resources>
